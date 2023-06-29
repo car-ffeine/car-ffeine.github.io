@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <id>https://car-ffenien.github.io/</id>
+    <title>CAR-FFEINE Blog</title>
+    <updated>2023-06-29T00:00:00.000Z</updated>
+    <generator>https://github.com/jpmonette/feed</generator>
+    <link rel="alternate" href="https://car-ffenien.github.io/"/>
+    <subtitle>CAR-FFEINE Blog</subtitle>
+    <entry>
+        <title type="html"><![CDATA[Hello World]]></title>
+        <id>https://car-ffenien.github.io/1</id>
+        <link href="https://car-ffenien.github.io/1"/>
+        <updated>2023-06-29T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[안녕하세요]]></summary>
+        <content type="html"><![CDATA[<p>안녕하세요</p>]]></content>
+        <author>
+            <name>박스터</name>
+            <uri>https://github.com/drunkenhw</uri>
+        </author>
+        <author>
+            <name>누누</name>
+            <uri>https://github.com/be-student</uri>
+        </author>
+        <author>
+            <name>제이</name>
+            <uri>https://github.com/sosow0212</uri>
+        </author>
+        <author>
+            <name>키아라</name>
+            <uri>https://github.com/kiarakim</uri>
+        </author>
+        <author>
+            <name>야미</name>
+            <uri>https://github.com/feb-dain</uri>
+        </author>
+        <author>
+            <name>센트</name>
+            <uri>https://github.com/kyw0716</uri>
+        </author>
+        <author>
+            <name>가브리엘</name>
+            <uri>https://github.com/gabrielyoon7</uri>
+        </author>
+        <category label="hello" term="hello"/>
+        <category label="world" term="world"/>
+    </entry>
+</feed>
