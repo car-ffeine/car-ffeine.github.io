@@ -1,0 +1,42 @@
+boxster:
+  name: 박스터
+  title: Backend
+  url: https://github.com/drunkenhw
+  image_url: https://github.com/drunkenhw.png
+
+nunu:
+  name: 누누
+  title: Backend
+  url: https://github.com/be-student
+  image_url: https://github.com/be-student.png
+
+kiara:
+  name: 키아라
+  title: Backend
+  url: https://github.com/kiarakim
+  image_url: https://github.com/kiarakim.png
+
+jay:
+  name: 제이
+  title: Backend
+  url: https://github.com/sosow0212
+  image_url: https://github.com/sosow0212.png
+
+gabriel:
+  name: 가브리엘
+  title: Backend
+  url: https://github.com/gabrielyoon7
+  image_url: https://github.com/gabrielyoon7.png
+
+cent:
+  name: 센트
+  title: Frontend
+  url: https://github.com/kyw0716
+  image_url: https://github.com/kyw0716.png
+
+yummy:
+  name: 야미
+  title: Frontend
+  url: https://github.com/feb-dain
+  image_url: https://github.com/feb-dain.png
+
