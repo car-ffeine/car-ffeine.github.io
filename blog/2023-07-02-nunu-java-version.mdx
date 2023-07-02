@@ -1,0 +1,279 @@
+---
+slug: 3
+title: Java 17 을 도입한 이유
+authors: [nunu]
+tags: [java17, java11, record, toList, gc]
+---
+우아한테크코스에서 자바 11을 사용하는 것이 너무 익숙해진 상황이어서, java 11 대신 java 17을 쓰려면 쓰는 대신, 왜 java 17을 쓰면 좋은지에 대해서 설득을 하는 시간이 있어야 하는데요
+
+처음에는 단순히 record 클래스가 좋아요, collect(Collectors.toList()); 대신 toList() 만으로 해결할 수 있어서 좋아요
+
+까지밖에 설명할 수 없었습니다.
+
+이것만으로 동의를 해줘서 일단 java 17 을 사용하기로 했지만, 이번 기회에 조금 더 자세하게 알아보려고 합니다
+
+## Java 17 과 Java 11의 중요한 차이들
+
+기능적인 부분과, 숨겨진 부분을 나누어볼 수 있을 것 같습니다.
+
+## 기능적인 차이점
+
+언제나 직접 차이를 보면 더 직관적이기 때문에, 직접 코드를 보면서 설명을 해보려고 합니다
+
+### record 클래스
+
+간단한 dto 클래스를 만들었을 때 코드가 정말 간단해지는 것을 확인할 수 있습니다
+
+#### Java 11
+
+```
+public class Dto {
+    private final int data;
+
+    public Dto(int data) {
+        this.data = data;
+    }
+
+    public int getData() {
+        return data;
+    }
+}
+```
+
+lombok 을 사용했을 때
+
+```
+
+@Getter
+@AllArgsConstructor
+public class Dto {
+    private final int data;
+}
+```
+
+#### Java17
+
+```
+public record Record(int data) {
+}
+```
+
+이렇게 보면 훨씬 간단해진 것을 볼 수 있습니다
+
+#### 예상되는 문제점
+
+objectMapper를 사용하면 어떻게 되나요? noArgsConstructor 가 필요하지 않나요?
+
+```
+class RecordTest {
+
+    @Test
+    void objectMapper_로_변환() throws JsonProcessingException {
+        // given
+        ObjectMapper objectMapper = new ObjectMapper();
+        Record record = new Record(1);
+
+        // when
+        String json = objectMapper.writeValueAsString(record);
+
+        // then
+        assertEquals("{\"data\":1}", json);
+    }
+
+    @Test
+    void string_에서_객체로_변환() throws JsonProcessingException {
+        // given
+        String json = "{\"data\":1}";
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        // when
+        Record record = objectMapper.readValue(json, Record.class);
+
+        // then
+        assertEquals(1, record.data());
+    }
+}
+```
+
+이 테스트에서 볼 수 있는 것처럼 성공적으로 deserialize, serialize 가 가능합니다
+
+### toList() method
+
+#### Java 11
+
+이 부분도 정말 편의성이 높다고 생각하는 부분 중 하나인데요
+
+Collectors.toList() 대신 toList() 만으로도 사용이 가능합니다
+
+```
+public class ToListWith11 {
+
+    public static void main(String[] args) {
+        List<Integer> list = List.of(1, 2, 3, 4, 5);
+        List<Integer> result = list.stream()
+                .filter(i -> i > 3)
+                .collect(Collectors.toList());
+        System.out.println(result);
+    }
+}
+```
+
+#### Java 17
+
+```
+public class ToListWith17 {
+
+    public static void main(String[] args) {
+        List<Integer> list = List.of(1, 2, 3, 4, 5);
+        List<Integer> result = list.stream()
+                .filter(i -> i > 3)
+                .toList();
+        System.out.println(result);
+    }
+}
+```
+
+### switch expression
+
+#### Java 11
+
+우테코에서는 switch, case 를 싫어하기에 볼 수는 없겠지만
+
+switch 문에도 정말 편하게 바뀌었는데요
+
+```
+public class SwitchWith11 {
+
+    public static void main(String[] args) {
+        String day = "Sunday";
+        int result = 0;
+        switch (day) {
+            case "Monday":
+                result = 1;
+                break;
+            case "Tuesday":
+                result = 2;
+                break;
+            case "Wednesday":
+                result = 3;
+                break;
+            case "Thursday":
+                result = 4;
+                break;
+            case "Friday":
+                result = 5;
+                break;
+            case "Saturday":
+                result = 6;
+                break;
+            case "Sunday":
+                result = 7;
+                break;
+        }
+        System.out.println(result);
+    }
+}
+```
+
+#### Java 17
+
+```
+public class SwitchWith17 {
+
+    public static void main(String[] args) {
+        String day = "Sunday";
+        int result = switch (day) {
+            case "Monday" -> 1;
+            case "Tuesday" -> 2;
+            case "Wednesday" -> 3;
+            case "Thursday" -> 4;
+            case "Friday" -> 5;
+            case "Saturday" -> 6;
+            case "Sunday" -> 7;
+            default -> 0;
+        };
+        System.out.println(result);
+    }
+}
+```
+
+코드 량이 엄청 줄어든 것을 확인하실 수 있습니다
+
+### instanceof pattern matching
+
+물론 instanceof 를 사용할 경우가 많은가? 하면 많지는 않겠지만
+
+아래와 같이 변경되었습니다
+
+#### Java 11
+
+```
+public class InstanceOfWith11 {
+
+    public static void main(String[] args) {
+        Object obj = "Hello";
+        if (obj instanceof String) {
+            String str = (String) obj;
+            System.out.println(str.toUpperCase());
+        }
+    }
+}
+```
+
+#### Java 17
+
+```
+public class InstanceOfWith17 {
+
+    public static void main(String[] args) {
+        Object obj = "Hello";
+        if (obj instanceof String str) {
+            System.out.println(str.toUpperCase());
+        }
+    }
+}
+```
+
+### number format
+
+이 기능은 12에 나왔는데요
+
+언어별로 숫자를 표현하는 방식이 다르지만, 쉽게 표현할 수 있도록 도와주는 기능입니다
+
+#### Java 17
+
+```
+public class NumberFormatterWith11 {
+    public static void main(String[] args) {
+        int number = 1_000_000;
+
+        String result = NumberFormat.getCompactNumberInstance(Locale.KOREA, NumberFormat.Style.LONG).format(number);
+
+        System.out.println(result.equals("100만"));
+    }
+}
+```
+
+나머지 부분은 사실 그렇게 큰 역할을 할 것 같지는 않아서 생략하겠습니다
+
+## 숨겨진 부분들
+
+![gc throughput](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FXhFJg%2Fbtsl9uZOa5R%2FrzrlotCERUqAWM2pknDwq0%2Fimg.png)
+
+위의 사진은 gc 의 버전별 처리량입니다.
+
+G1 GC 를 기준으로 본다면 Java8 과의 차이는 15% 정도 향상되었고, java 11과는 10% 정도 향상되었습니다.
+
+![gc latency](https://img1.daumcdn.net/thumb/R1280x0/?scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2FZusmb%2Fbtsl5jYN68u%2FWCKRCFnYjQK4AjkcHRNAt0%2Fimg.png)
+
+위의 사진은 gc의 버전별 지연시간입니다.
+
+G1 GC 를 기준으로 본다면 Java8 과의 차이는 30% 정도 향상되었고, java 11과는 25% 정도 향상되었습니다.
+
+이와 같이, 단순하게 새로운 기능만 추가되는 것이 아니라 꾸준히 성능도 향상되고 있습니다.
+
+이런 부분을 고려했을 때, Java 17을 사용하는 것이 좋을 것 같습니다.
+
+참고
+
+-   [https://kstefanj.github.io/2021/11/24/gc-progress-8-17.html](https://kstefanj.github.io/2021/11/24/gc-progress-8-17.html)
