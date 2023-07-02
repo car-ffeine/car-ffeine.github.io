@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkcar_ffeine=self.webpackChunkcar_ffeine||[]).push([[5783],{8949:a=>{a.exports=JSON.parse('{"label":"java11","permalink":"/tags/java-11","allTagsPath":"/tags","count":1}')}}]);

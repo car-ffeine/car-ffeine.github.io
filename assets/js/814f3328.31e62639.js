@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkcar_ffeine=self.webpackChunkcar_ffeine||[]).push([[2535],{5641:e=>{e.exports=JSON.parse('{"title":"Recent posts","items":[{"title":"git branch \uc804\ub7b5 \uc791\uc131\ud574\ubcf4\uae30","permalink":"/2"},{"title":"Hello World","permalink":"/1"}]}')}}]);
