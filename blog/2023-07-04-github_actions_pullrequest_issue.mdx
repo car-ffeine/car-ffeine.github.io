@@ -1,0 +1,88 @@
+---
+slug: 5
+title: "pr 본문에 이슈 번호를 달아주는 기능을 만들었습니다"
+authors: [nunu]
+tags: [github, action, pr, issue]
+---
+
+안녕하세요 우테코 카페인팀 누누입니다
+
+빠르게 결과부터 보고 가시죠.
+
+## 어떤 결과가 나왔나요?
+
+pr의 본문 끝에, 연관된 이슈 번호를 달아주는 기능을 만들었습니다.
+
+밑에 사진을 보시면 쉽게 이해하실 수 있을 것 같습니다.
+
+![img](https://user-images.githubusercontent.com/80899085/250614527-e2672cf2-786a-434c-a8b6-8b374de4d689.png)![img](https://user-images.githubusercontent.com/80899085/250614882-d99aa570-51e2-4565-ab4c-ccdbd4d36e57.png)
+
+github에서 issue 번호가 pr에 담겨있다면 2가지 장점이 생기는데요.
+
+1.  issue를 클릭했을 때, 자동으로 그 issue로 넘어갈 수 있습니다. (호버만으로 이슈에 대한 간단한 정보를 볼 수 있습니다)
+2.  pr 이 merge 되었을 때, 자동으로 issue 가 close 됩니다.
+
+이 과정을 손으로 진행하는 것보다, 자동으로 진행하게 되면 실수도 줄어들고, 개발 과정이 편해질 것 같아서 이 기능을 제작하게 되었는데요
+
+## 중요한 점
+
+**이 과정을 진행하려면 밑에서 소개해드릴 브랜치 네이밍 규칙이 필요합니다.**
+
+## 브랜치 이름 규칙
+
+-   브랜치 이름은 `타입/이슈번호` 으로 구성합니다. ex) `feat/1`
+-   타입은 `feat`, `fix`, `docs`, `refactor`, `test` 등 여러 가지가 있을 수 있습니다.
+
+이렇게 했을 때, 이슈 번호를 브랜치 명에서부터 가져올 수 있기에, 자동화를 할 수 있습니다.
+
+이런 규칙이 아닌, feat/action 같은 형태가 된다면 issue 번호를 찾기 어렵겠죠?
+
+## 사용 방법
+
+작성된 코드부터 보시고, 설명을 드리겠습니다.
+
+아래에 작성된 코드를. github/workflows/assign\_issue\_number\_to\_pr\_body.yml로 저장하시면 끝입니다.
+
+```
+name: assign_issue_number_to_pr_body
+
+on:
+  pull_request:
+    types: [ opened ]
+    branches-ignore:
+      - develop
+
+jobs:
+  append_issue_number_to_pr_body:
+    runs-on: ubuntu-latest
+    steps:
+      - name: append feature number to pr body pr branch = feat/(issueNumber)
+        uses: actions/github-script@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = await github.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.issue.number
+            });
+            const body = pr.data.body;
+            const issueNumber= pr.data.head.ref.split('/')[1];
+            const newBody = body + "\n\n" + "연관된 issue: #" + issueNumber;
+            await github.pulls.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: context.issue.number,
+                  body: newBody
+              });
+```
+
+## 진행 과정
+
+1.  pr 이 생성되면, pr에 대한 정보를 가져옵니다.
+2.  pr의 본문을 가져옵니다.
+3.  pr의 브랜치 이름에서 이슈 번호를 가져옵니다.
+4.  pr의 본문에 이슈 번호를 추가합니다.
+5.  pr의 본문을 업데이트합니다.
+
+이 과정을 통해서, 직접 pr의 본문을 수정하지 않아도, 자동으로 이슈 번호가 추가되기에, 실수를 줄일 수 있으니, 한 번 시도해 보세요
