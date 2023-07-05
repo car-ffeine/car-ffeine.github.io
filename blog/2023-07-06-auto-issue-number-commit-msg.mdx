@@ -1,0 +1,78 @@
+---
+slug: 7
+title: '깃 커밋 메시지에 이슈 번호를 자동으로 입력할 순 없을까?'
+authors: [yummy]
+tags: [git, commit, message, issue, auto]
+---
+
+프로젝트 브랜치명 컨벤션이 feat/이슈번호여서, 브랜치명에서 이슈번호만 가져온 다음 커밋할 때마다 커밋 메시지 아래단(footer)에 이슈 번호를 자동으로 입력해주고 싶었다. 자동으로 입력된다면 깜빡하고 이슈 번호를 안 적는 일도 없고, 시간도 단축할 수 있기 때문이다.
+
+아래 순서대로 진행한다면 이슈 번호 POSTFIX 자동화를 할 수 있다.
+
+### 1) 프로젝트 폴더에 .githooks 폴더 생성
+
+### 2) .githooks 폴더에 commit-msg 파일 생성
+
+```
+#!/bin/bash
+
+COMMIT_MESSAGE_FILE_PATH=$1
+MESSAGE=$(cat "$COMMIT_MESSAGE_FILE_PATH")
+
+# 커밋 메시지가 없을 때, 커밋 방지
+if [[ $(head -1 "$COMMIT_MESSAGE_FILE_PATH") == '' ]]; then
+  exit 0
+fi
+
+# 브랜치명에서 이슈 번호만 추출 ('/' 뒤에 있는 문자만 추출)
+POSTFIX=$(git branch | grep '\*' | sed 's/* //' | sed 's/^.*\///' | sed 's/^\([^-]*-[^-]*\).*/\1/')
+
+COMMIT_SOURCE=$2
+CURRENT_BRANCH=$(git branch --show-current)
+
+# [[ "$CURRENT_BRANCH" != "$POSTFIX" ]] 👉🏻 현재 브랜치명과 POSTFIX가 똑같으면 POSTFIX 입력 방지
+# [ "$COMMIT_SOURCE" != "merge" ] 👉🏻 merge할 때, POSTFIX 입력 방지
+# [[ "$MESSAGE" != *"[#$POSTFIX]"* ]] 👉🏻 이미 POSTFIX가 존재할 때, POSTFIX 중복 입력 방지
+if [[ "$CURRENT_BRANCH" != "$POSTFIX" ]] && [ "$COMMIT_SOURCE" != "merge" ] && [[ "$MESSAGE" != *"[#$POSTFIX]"* ]]; then
+  printf "%s\n\n[#%s]" "$MESSAGE" "$POSTFIX" > "$COMMIT_MESSAGE_FILE_PATH"
+fi
+```
+
+🧐 이슈 번호 추출에 사용된 명령어 설명
+
+- grep '\*' 👉 `*` 표시된 브랜치(현재 위치의 브랜치)를 가져온다.
+- sed 's/_ //' 👉 `*` 제거
+- sed 's/\([^/]_\)._/\1/' 👉 `/` 이후의 문자만 추출
+- sed 's/^\([^-]_-[^-]_\).\_/\1/' 👉 하나의 이슈에 여러 브랜치를 만들면서 feat/10-1 이런 형태로 브랜치를 만들 경우, 첫 번째 '-' 앞 뒤만 추출 (ex. 10-1)
+
+### 3) 프로젝트 폴더에 Makefile 파일 생성
+
+```
+init:
+  git config core.hooksPath .githooks
+  chmod +x .githooks/commit-msg
+  git update-index --chmod=+x .githooks/commit-msg
+
+ # chmod +x .githooks/commit-msg 👉🏻 macOS, 리눅스에서 스크립트 권한 부여
+ # git update-index --chmod=+x .githooks/commit-msg
+ # 👉 macOS, 리눅스에서 브랜치가 바뀔 때마다 스크립트 실행시켜줘야 하는 문제 해결
+```
+
+### 4) 아래 코드 실행
+
+새로 git clone을 할 때마다 아래 코드를 실행시켜줘야 한다. 한 번만 실행시키면 계속 적용된다. (window 기준)
+
+```
+git config core.hooksPath .githooks
+```
+
+❗macOS는 git clone 할 때마다 아래 코드를 실행시켜줘야 한다.
+
+```
+make
+```
+
+---
+
+참고 블로그
+https://blog.deering.co/commit-convention/
