@@ -1,0 +1,327 @@
+---
+
+slug: 8
+title: 스프링에서 발생한 에러 로그를 슬랙으로 모니터링하는 방법
+authors: [nunu]
+tags: [spring, slack, error]
+
+---
+
+안녕하세요 카페인팀 nunu입니다.
+
+오늘은 스프링에서 발생한 에러 로그를 슬랙으로 모니터링하는 방법에 대해서 알아보려고 합니다.
+
+목차는 다음과 같습니다.
+
+1.  스프링에서 로그를 남기는 방법
+2.  Slf4 j의 동작원리
+3.  Logback의 동작원리
+4.  Logback을 사용해서 슬랙으로 에러 로그를 모니터링하는 방법
+
+## 스프링에서 로그는 어떻게 찍을까?
+
+스프링에서 로그를 찍는 방법은 여러 가지가 있지만, 가장 간단한 방법은 `System.out.println()`을 사용하는 것입니다.
+
+```
+@RestController
+public class TestController {
+
+    @GetMapping("/test")
+    public String test() {
+        System.out.println("test");
+        return "test";
+    }
+}
+```
+
+당연하지만, 성능이 안 좋아서 실제 서비스에서는 사용하지 않습니다.
+
+스프링에서는 Slf4 j를 통해서 로그를 남길 수 있습니다.
+
+```
+
+@Slf4j // private final Logger log = LoggerFactory.getLogger(this.getClass()); 와 같다.
+@RestController
+public class TestController {
+
+    @GetMapping("/test")
+    public String test() {
+        log.info("test");
+        return "test";
+    }
+}
+```
+
+이 코드를 통해서 로그를 남길 수 있는데, 자동으로 콘솔에 출력이 됩니다.
+
+## 스프링에서 로깅은 어떻게 작동하는 거지?
+
+스프링 4까지는 `Commons Logging`을 사용했었습니다.
+
+`Commons Logging`은 `JCL`이라고도 불리며, `JDK Logging`, `Log4 j,` `Logback` 등 다양한 로깅 프레임워크를 지원합니다.
+
+JCL 은 런타임에 어떤 로깅 프레임워크를 사용할지 결정할 수 있습니다.
+
+런타임에 어떤 로깅 프레임워크를 사용할지 결정하는 방식으로 클래스 로더에게 질의를 하는 방식으로 작동하게 되는데
+
+클래스 로더에게 질의를 했을 경우에 몇 가지 문제점이 생깁니다
+
+1.  클래스 로더에 명확한 표준이 없고, 부모 자식 모델이 있어서, 클래스 로더에 따라서 다른 결과가 나올 수 있습니다. [참고](http://articles.qos.ch/classloader.html)
+2.  클래스로더는 gc의 동작에 방해를 일으켜서 메모리 누수를 발생시킬 수 있습니다. [참고](https://cwiki.apache.org/confluence/display/COMMONS/Logging+UndeployMemoryLeak)
+
+`@Slf4 j` 어노테이션을 붙이면, 컴파일 시점에 `private final Logger log = LoggerFactory.getLogger(this.getClass());` 와 같은 코드로 변환됩니다.
+
+스프링 5에서는 Slf4j 가 사용하는 것처럼, 컴파일 타임에 어떤 로깅 프레임워크를 사용할지 결정하는 기능을 작성했고, `Commons Logging`을 사용하지 않게 되었습니다.
+
+[spring 5에서 변경되었다는 링크](https://docs.spring.io/spring-framework/docs/5.0.0.RC3/spring-framework-reference/overview.html#overview-logging)
+
+## Slf4 j에 대해서 알아보자
+
+Slf4 j는 로깅을 위한 인터페이스를 제공하는 프레임워크입니다.(Simple Logging Facade for Java)
+
+컴파일 타임에, 어떤 로그 라이브러리를 사용할지 결정하는 기능을 제공합니다.
+
+로그 라이브러리를 바꾸려고 했을 때, 기존 코드는 하나도 건드리지 않고, 로그 라이브러리만 바꿔주면 되도록 해줍니다.
+
+### 조금 더 자세한 동작 원리를 알아보자
+
+![only slf4j](https://blog.kakaocdn.net/dn/lCcTc/btsmBw3OEJz/1njLV283KdUWc9qyppEdak/img.png)
+
+Slf4 j 만을 사용했을 경우 위 사진 같은 형태로 요청이 처리가 됩니다.
+
+Slf4 j 라는 인터페이스를 통해서 로그를 남기고, 어떤 로그 라이브러리를 사용할지는 `Slf4j binding`이라는 것을 통해서 결정합니다.
+
+`Slf4 j binding` 은 `Slf4j`의 인터페이스를 구현하고 있지 않은 라이브러리의 구현체를 연결해 주는 역할을 합니다.
+
+그 구현체로 `Slf4 j-log4 j12-{version}. jar` 같은 것이 있다.
+
+이와는 다르게 Logback 은 Slf4 j 를 구현하고 있기에, `Slf4j binding` 을 사용하지 않아도 됩니다.
+
+![logback example](https://blog.kakaocdn.net/dn/IYC3k/btsmy0einLF/F0aiMnteJeGB00fkGdBjRK/img.png)
+
+위 사진처럼 `Slf4 j binding` 을 사용하지 않고, `Logback` 바로 사용하는 것도 가능합니다.
+
+그렇다면 Slf4 j를 바로 사용하지 않은 코드에서 `Slf4j` 를 사용하려면 어떻게 해야 할까요?
+
+![slf4j working principle](https://blog.kakaocdn.net/dn/msTPw/btsmziy04VE/sXSOKYvi9yXSoiRmg6mIGk/img.png)
+
+위 사진처럼 `Slf4 j bridge` 를 통해서 외부 라이브러리를 사용하는 것처럼 갈아 끼울 수 있습니다.
+
+`Log4j2` 를 사용하는 코드를 전혀 바꾸지 않아도, `Bridge` 가 `Slf4j` 를 통해 `Logback`으로 자연스럽게 로그를 남길 수 있도록 해줍니다.
+
+## Logback에 대해서 알아보자
+
+Logback 은 스프링에서 기본으로 사용될 만큼 인기 있는 로그 라이브러리입니다.
+
+![logback 동작 과정](https://logback.qos.ch/manual/images/chapters/architecture/underTheHoodSequence2_small.gif)
+
+공식문서에서 아주 핵심적인 동작원리를 설명해주고 있는 사진이라서 가져왔습니다.
+
+너무 어려워 보여서, 조금 자세하게 각각의 구성요소에 대해서 알아보도록 하겠습니다
+
+이에 대해 알아보도록 하겠습니다
+
+## 로그백의 구성요소
+
+### Appender
+
+Appender는 로그를 어디에 출력할지를 결정하는 역할을 합니다.
+
+외부로부터 어떤 데이터를 받아서, 어떤 방식으로 처리할지에 대해서 전체적으로 설정할 수 있습니다.
+
+기본적으로 수많은 Appender 가 제공되고 있습니다.
+
+-   ConsoleAppender
+-   FileAppender
+-   RollingFileAppender
+-   AsyncAppender
+-   DBAppender
+-   SMTPAppender
+-   SocketAppender
+-   SyslogAppender
+
+저희는 Slack에 알림을 주는 것이 목적이기 때문에, SlackAppender를 사용하면 될 것 같습니다.
+
+하지만 SlackAppender는 제공되고 있지 않기에 직접 구현을 해야 하는데요
+
+이를 구현했을 때, Slack API 가 끝날 때까지, 계속 기다리고 있을 필요가 없기에, AsyncAppender를 사용하는 것이 좋을 것 같습니다.
+
+사용 방법은 다음과 같습니다. xml 기반으로 가능한데요
+
+```
+<configuration>
+  <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+    <file>myapp.log</file>
+    <encoder>
+      <pattern>%logger{35} -%kvp -%msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <appender name="ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+    <appender-ref ref="FILE" />
+  </appender>
+
+  <root level="DEBUG">
+    <appender-ref ref="ASYNC" />
+  </root>
+    </configuration>
+```
+
+만약 여기에 있는 기능들로 부족하다면, 직접 Appender 를 구현해서 사용할 수도 있습니다.
+
+직접 구현하려면 AppenderBase를 상속받아서 구현하면 됩니다.
+
+이 클래스는 필요한 부분이 대부분 구현되어 있고, appender 만 구현하면 바로 사용할 수 있습니다. 당연하지만 필요하다면 override 도 가능하죠
+
+### Layout
+
+Layout 은 로그를 어떤 형식으로 출력할지를 결정하는 역할을 합니다.
+
+Appender는 로그를 어디에 출력할지를 결정하는 역할을 하고, Layout 은 로그를 어떤 형식으로 출력할지를 결정하는 역할을 하도록 하는 것이 이상적이지만
+
+Logback 은 Appender에서 Layout 을 직접 지정할 수 있도록 해주고 있습니다.
+
+따라서, 직접 Layout 을 만들지 않고, Appender 에서 기존에 이미 있는 패턴만 사용하려고 합니다
+
+### Encoder
+
+Encoder는 Layout 과 비슷한 역할을 합니다.
+
+Layout 은 로그를 어떤 형식으로 출력할지를 결정하는 역할을 하고, Encoder 는 실제 byte 형태로 변환하는 역할을 합니다.
+
+Slack의 webhook을 사용할 것이지만, AppenderBase를 사용하기에, 이번에는 사용할 수 없습니다.
+
+### Filter
+
+Filter는 로그를 어떤 조건에 따라서 출력할지를 결정하는 역할을 합니다.
+
+Filter 는 Appender를 등록하며 같이 등록할 수 있는데요
+
+이번 프로젝트에서는 Level 이 ERROR 이상인 것만 출력하도록 하고 싶기에, LevelFilter를 사용하면 좋을 것 같습니다.
+
+```
+<configuration>
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <filter class="ch.qos.logback.classic.filter.LevelFilter">
+      <level>INFO</level>
+      <onMatch>ACCEPT</onMatch>
+      <onMismatch>DENY</onMismatch>
+    </filter>
+    <encoder>
+      <pattern>
+        %-4relative [%thread] %-5level %logger{30} -%kvp -%msg%n
+      </pattern>
+    </encoder>
+  </appender>
+  <root level="DEBUG">
+    <appender-ref ref="CONSOLE" />
+  </root>
+</configuration>
+```
+
+와 비슷하게 사용할 수 있어 보입니다.
+
+그러면 실제로 프로젝트에서 error 발생 시 slack으로 알림을 주는 것을 구현해 보도록 하겠습니다.
+
+## 슬랙에 추가하는 방법
+
+[이 블로그](https://velog.io/@king/slack-incoming-webhook)를 보고서 작성했습니다
+
+## 실제 구현
+
+구현된 결과물은 아래와 같습니다
+
+![slack appender](https://blog.kakaocdn.net/dn/d3z7QG/btsmQCCV69f/NwiyNhQGZOBnKBP2hT8kf0/img.png)
+
+### SlackAppender 구현하기
+
+```
+public class SlackAppender extends AppenderBase<ILoggingEvent> {
+    @Override
+    protected void append(final ILoggingEvent eventObject) {
+        final var restTemplate = new RestTemplate();
+        final var url = "https://hooks.slack.com/services/";
+        final Map<String, Object> body = createSlackErrorBody(eventObject);
+        restTemplate.postForEntity(url, body, String.class);
+    }
+
+    private Map<String, Object> createSlackErrorBody(final ILoggingEvent eventObject) {
+        final String message = createMessage(eventObject);
+        return Map.of(
+                "attachments", List.of(
+                        Map.of(
+                                "fallback", "요청을 실패했어요 :cry:",
+                                "color", "#2eb886",
+                                "pretext", "에러가 발생했어요 확인해주세요 :cry:",
+                                "author_name", "car-ffeine",
+                                "text", message,
+                                "fields", List.of(
+                                        Map.of(
+                                                "title", "우선순위",
+                                                "value", "High",
+                                                "short", false
+                                        ),
+                                        Map.of(
+                                                "title", "서버 환경",
+                                                "value", "local",
+                                                "short", false
+                                        )
+                                ),
+                                "ts", eventObject.getTimeStamp()
+                        )
+                )
+        );
+    }
+
+    private String createMessage(final ILoggingEvent eventObject) {
+        final String baseMessage = "에러가 발생했습니다.\n";
+        final String pattern = baseMessage + "```%s %s %s [%s] - %s```";
+        final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+        return String.format(pattern,
+                simpleDateFormat.format(eventObject.getTimeStamp()),
+                eventObject.getLevel(),
+                eventObject.getThreadName(),
+                eventObject.getLoggerName(),
+                eventObject.getFormattedMessage());
+    }
+}
+```
+
+이 과정에서 url을 직접 입력하시면 됩니다.
+
+그리고, 이렇게 만든 SlackAppender를 logback-spring.xml 에 등록하면 됩니다.
+
+```
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration scan="true" scanPeriod="60 seconds">
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <property name="LOG_FILE" value="${LOG_FILE:-${LOG_PATH:-${LOG_TEMP:-${java.io.tmpdir:-/tmp}}}/spring.log}"/>
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+    <include resource="org/springframework/boot/logging/logback/file-appender.xml"/>
+    <root level="INFO">
+        <appender-ref ref="FILE"/>
+        <appender-ref ref="CONSOLE"/>
+    </root>
+    <appender name="SLACK_APPENDER" class="racingcar.SlackAppender">
+    </appender>
+    <appender name="ASYNC_SLACK_APPENDER" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="SLACK_APPENDER"/>
+    </appender>
+    <logger name="racingcar" level="ERROR" additivity="true">
+        <appender-ref ref="ASYNC_SLACK_APPENDER"/>
+
+    </logger>
+
+</configuration>
+```
+
+이렇게 하면, racingcar 패키지에서 에러가 발생할 때만 slack으로 알림을 받을 수 있습니다.
+
+## 결론
+
+![slack appender](https://blog.kakaocdn.net/dn/d3z7QG/btsmQCCV69f/NwiyNhQGZOBnKBP2hT8kf0/img.png)
+
+이번 글에서는 log 레벨에 따라 slack 으로 알림을 받는 방법을 알아보았습니다.
+
+긴 글을 읽어주셔서 감사합니다
