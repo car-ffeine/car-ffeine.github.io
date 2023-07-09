@@ -22,7 +22,7 @@ tags: [spring, slack, error]
 
 스프링에서 로그를 찍는 방법은 여러 가지가 있지만, 가장 간단한 방법은 `System.out.println()`을 사용하는 것입니다.
 
-```
+```java
 @RestController
 public class TestController {
 
@@ -38,8 +38,7 @@ public class TestController {
 
 스프링에서는 Slf4 j를 통해서 로그를 남길 수 있습니다.
 
-```
-
+```java
 @Slf4j // private final Logger log = LoggerFactory.getLogger(this.getClass()); 와 같다.
 @RestController
 public class TestController {
@@ -69,7 +68,7 @@ JCL 은 런타임에 어떤 로깅 프레임워크를 사용할지 결정할 수
 1.  클래스 로더에 명확한 표준이 없고, 부모 자식 모델이 있어서, 클래스 로더에 따라서 다른 결과가 나올 수 있습니다. [참고](http://articles.qos.ch/classloader.html)
 2.  클래스로더는 gc의 동작에 방해를 일으켜서 메모리 누수를 발생시킬 수 있습니다. [참고](https://cwiki.apache.org/confluence/display/COMMONS/Logging+UndeployMemoryLeak)
 
-`@Slf4 j` 어노테이션을 붙이면, 컴파일 시점에 `private final Logger log = LoggerFactory.getLogger(this.getClass());` 와 같은 코드로 변환됩니다.
+`@Slf4j` 어노테이션을 붙이면, 컴파일 시점에 `private final Logger log = LoggerFactory.getLogger(this.getClass());` 와 같은 코드로 변환됩니다.
 
 스프링 5에서는 Slf4j 가 사용하는 것처럼, 컴파일 타임에 어떤 로깅 프레임워크를 사용할지 결정하는 기능을 작성했고, `Commons Logging`을 사용하지 않게 되었습니다.
 
@@ -91,21 +90,21 @@ Slf4 j 만을 사용했을 경우 위 사진 같은 형태로 요청이 처리�
 
 Slf4 j 라는 인터페이스를 통해서 로그를 남기고, 어떤 로그 라이브러리를 사용할지는 `Slf4j binding`이라는 것을 통해서 결정합니다.
 
-`Slf4 j binding` 은 `Slf4j`의 인터페이스를 구현하고 있지 않은 라이브러리의 구현체를 연결해 주는 역할을 합니다.
+`Slf4j binding` 은 `Slf4j`의 인터페이스를 구현하고 있지 않은 라이브러리의 구현체를 연결해 주는 역할을 합니다.
 
-그 구현체로 `Slf4 j-log4 j12-{version}. jar` 같은 것이 있다.
+그 구현체로 `Slf4j-log4 j12-{version}. jar` 같은 것이 있다.
 
 이와는 다르게 Logback 은 Slf4 j 를 구현하고 있기에, `Slf4j binding` 을 사용하지 않아도 됩니다.
 
 ![logback example](https://blog.kakaocdn.net/dn/IYC3k/btsmy0einLF/F0aiMnteJeGB00fkGdBjRK/img.png)
 
-위 사진처럼 `Slf4 j binding` 을 사용하지 않고, `Logback` 바로 사용하는 것도 가능합니다.
+위 사진처럼 `Slf4j binding` 을 사용하지 않고, `Logback` 바로 사용하는 것도 가능합니다.
 
 그렇다면 Slf4 j를 바로 사용하지 않은 코드에서 `Slf4j` 를 사용하려면 어떻게 해야 할까요?
 
 ![slf4j working principle](https://blog.kakaocdn.net/dn/msTPw/btsmziy04VE/sXSOKYvi9yXSoiRmg6mIGk/img.png)
 
-위 사진처럼 `Slf4 j bridge` 를 통해서 외부 라이브러리를 사용하는 것처럼 갈아 끼울 수 있습니다.
+위 사진처럼 `Slf4j bridge` 를 통해서 외부 라이브러리를 사용하는 것처럼 갈아 끼울 수 있습니다.
 
 `Log4j2` 를 사용하는 코드를 전혀 바꾸지 않아도, `Bridge` 가 `Slf4j` 를 통해 `Logback`으로 자연스럽게 로그를 남길 수 있도록 해줍니다.
 
@@ -148,7 +147,7 @@ Appender는 로그를 어디에 출력할지를 결정하는 역할을 합니다
 
 사용 방법은 다음과 같습니다. xml 기반으로 가능한데요
 
-```
+```xml
 <configuration>
   <appender name="FILE" class="ch.qos.logback.core.FileAppender">
     <file>myapp.log</file>
@@ -164,7 +163,7 @@ Appender는 로그를 어디에 출력할지를 결정하는 역할을 합니다
   <root level="DEBUG">
     <appender-ref ref="ASYNC" />
   </root>
-    </configuration>
+</configuration>
 ```
 
 만약 여기에 있는 기능들로 부족하다면, 직접 Appender 를 구현해서 사용할 수도 있습니다.
@@ -199,7 +198,7 @@ Filter 는 Appender를 등록하며 같이 등록할 수 있는데요
 
 이번 프로젝트에서는 Level 이 ERROR 이상인 것만 출력하도록 하고 싶기에, LevelFilter를 사용하면 좋을 것 같습니다.
 
-```
+```xml
 <configuration>
   <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
     <filter class="ch.qos.logback.classic.filter.LevelFilter">
@@ -235,8 +234,9 @@ Filter 는 Appender를 등록하며 같이 등록할 수 있는데요
 
 ### SlackAppender 구현하기
 
-```
+```java
 public class SlackAppender extends AppenderBase<ILoggingEvent> {
+
     @Override
     protected void append(final ILoggingEvent eventObject) {
         final var restTemplate = new RestTemplate();
@@ -291,7 +291,7 @@ public class SlackAppender extends AppenderBase<ILoggingEvent> {
 
 그리고, 이렇게 만든 SlackAppender를 logback-spring.xml 에 등록하면 됩니다.
 
-```
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 
 <configuration scan="true" scanPeriod="60 seconds">
