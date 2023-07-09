@@ -13,7 +13,7 @@ tags: [git, commit, message, issue, auto]
 
 ### 2) .githooks 폴더에 commit-msg 파일 생성
 
-```
+```shell
 #!/bin/bash
 
 COMMIT_MESSAGE_FILE_PATH=$1
@@ -47,7 +47,7 @@ fi
 
 ### 3) 프로젝트 폴더에 Makefile 파일 생성
 
-```
+```shell
 init:
   git config core.hooksPath .githooks
   chmod +x .githooks/commit-msg
@@ -62,13 +62,13 @@ init:
 
 새로 git clone을 할 때마다 아래 코드를 실행시켜줘야 한다. 한 번만 실행시키면 계속 적용된다. (window 기준)
 
-```
+```shell
 git config core.hooksPath .githooks
 ```
 
 ❗macOS는 git clone 할 때마다 아래 코드를 실행시켜줘야 한다.
 
-```
+```shell
 make
 ```
 
