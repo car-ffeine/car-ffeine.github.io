@@ -1,0 +1,175 @@
+---
+slug: 7
+title: "jasypt를 활용하여 프로퍼티를 암호화하자"
+authors: [kiara]
+tags: [jasypt, Spring]
+---
+
+## 서론
+
+안녕하세요 카페인팀 `키아라`입니다.
+
+이번 프로젝트를 시작하면서 프로퍼티를 암호화하는 방법으로 jasypt를 알게되어
+
+사용하는 방법을 익혀 저희 프로젝트에 적용해볼 계획입니다.
+
+## 프로퍼티 암호화는 왜 필요할까?
+
+```java
+spring:
+  datasource:
+    url: 데이터베이스 url
+    username: 계정
+    password: 비밀번호
+```
+
+프로젝트를 진행하면서 yml 파일에 DB 연결 URL이나 계정, 비밀번호 같이 노출되어선 안 되는 민감한 정보들이 많습니다.
+
+git의 public repository와 CI/CD를 연동해 어플리케이션을 배포한다면 중요한 정보가 탈취될 가능성이 있죠.
+
+Jasypt 라이브러리를 사용하면 평문으로 된 데이터베이스 접속 정보를 암호화 하여 방어막을 한 겹 쌓을 수 있게 됩니다.
+
+간략하게 라이브러리를 소개하고 사용 방법을 알아볼까요?
+
+## jasypt는 뭐지?
+
+Jasypt이란 쉽게 암호화 기능을 사용할 수 있도록 제공하는 Java 라이브러리입니다.
+
+민감한 평문 정보를 암호화하고, 아래처럼 설정 값을 지정하면 어플리케이션이 실행될 때 자동으로 이를 복호화하여 사용합니다.
+
+사용자가 편하게 암호화 기능을 사용할 수 있도록 제공하는 Java 라이브러리로
+
+공식 홈페이지는 http://www.jasypt.org/ 에 가면 더 자세한 정보를 확인할 수 있습니다.
+
+## 사용 방법
+
+정말 간단하게 라이브러리 추가, key값 넘겨주기, 암호화 세 가지 단계로 프로퍼티를 암호화하여 관리할 수 있습니다.
+
+### 1. 라이브러리 추가 (= 의존성 추가)
+
+```java
+implementation "com.github.ulisesbocchio:jasypt-spring-boot-starter:3.0.3"
+```
+
+### 2. Jasypt 설정 및 Bean 등록
+
+key를 사용해서 Bean을 등록하는 기본 설정입니다. 여기서 Bean의 이름을 jasyptEncryptor라고 설정했다면 프로퍼티 등록해야 합니다.
+
+```java
+@Configuration
+public class JasyptConfig {
+
+    private String ENCRYPT_KEY = "hello";
+
+    @Bean(name = "jasyptEncryptor")
+    public StringEncryptor stringEncryptor() {
+        PooledPBEStringEncryptor encryptor = new PooledPBEStringEncryptor();
+
+        SimpleStringPBEConfig config = new SimpleStringPBEConfig();
+
+        config.setPassword(ENCRYPT_KEY);
+        config.setAlgorithm("PBEWithMD5AndDES");
+        config.setKeyObtentionIterations(1000);
+        config.setPoolSize(1);
+        config.setSaltGeneratorClassName("org.jasypt.salt.RandomSaltGenerator");
+        config.setStringOutputType("base64");
+        encryptor.setConfig(config);
+        return encryptor;
+    }
+}
+```
+
+```java
+jasypt:
+  encryptor:
+    bean: jasyptEncryptor
+```
+
+### 3. 암호화
+
+라이브러리를 사용할 준비는 거의 다 끝났습니다. 이제 암호화하여 프로퍼티에 작성합니다.
+
+이때 암호화 하는 방법은, 아래 사이트에 접속해 평문과 키를 입력한 후 나온 암호문을 프로퍼티 파일에 'ENC(암호문)' 로 작성합니다.
+
+[암복호화 사이트](https://www.devglan.com/online-tools/jasypt-online-encryption-decryption)
+
+![평문](https://github.com/kiarakim/algorithm/assets/101039161/b0293dfc-e0d8-45a0-91af-becf790a1002)
+
+```java
+  datasource:
+    url: 데이터베이스 url
+    username: 계정
+    password: ENC(piAhHYGHR3dWDkdco6C3n8TpJdyq8FnO)
+```
+
+나머지도 마저 암호화해줍시다.
+
+```java
+  datasource:
+    url: ENC(j94r94hQbd1SfFHGCUeweg+GGDosfnxP8dL0FQxfXtE=)
+    username: ENC(vp3Gw8kLpwDZhmMMqf88/Q==)
+    password: ENC(piAhHYGHR3dWDkdco6C3n8TpJdyq8FnO)
+```
+
+## 실행
+
+올바른 암호문을 입력했다면 정상적으로 실행이 됩니다.
+
+그러나 이때 임의로 암호문을 수정한다면 다음과 같이 빌드를 실패합니다.
+
+![실행 실패](https://github.com/kiarakim/algorithm/assets/101039161/d003df00-bf4f-4ed2-a1ee-293cd7da6fc1)
+
+그런데 뭔가 이상하지 않나요?
+
+프로퍼티는 분명 암호화 했는데 키가 코드에 그대로 노출되어 있습니다.
+
+Git의 public Repository에 배포하면 다른 사람들도 볼 수 있습니다.
+
+그럼 이 키를 어디에 숨길 수 있을까요?
+
+저는 처음에 일반 file에 키를 넣어놓고 파일을 읽어오는 식으로 키를 관리하려고 했습니다. 당연히 해당 파일은 .gitignore로 커밋 대상에서 제외해야겠죠.
+
+그런데 이것보다 더 쉽고 빠른 방법이 있습니다.
+
+바로 환경변수를 설정하는 것이죠.
+
+### + 환경변수 설정
+
+```java
+private String ENCRYPT_KEY = "hello";
+```
+기존의 키를 관리하는 방식이었습니다.
+
+우선 이 키를 프로퍼티에서 관리하도록 설정해볼까요?
+
+```java
+// JasyptConfig.class
+@Value("${jasypt.encryptor.password}")
+    private String ENCRYPT_KEY;
+```
+```java
+// application.yml
+jasypt:
+  encryptor:
+    password: hello
+```
+
+이제 환경변수를 설정해봅시다.
+
+Run > Edit Configurations... 경로로 들어가면
+
+Run/Debug Configurations 창이 나오는데
+
+Environment variables: 부분에 ENCRYPT_KEY=hello
+
+라고 적어주세요.
+
+그 후 다시 yml 파일로 돌아와 기존 hello로 되어있는 부분을 ${ENCRYPT_KEY}로 변경하고 실행한다면 정상적으로 작동됩니다.
+
+```java
+jasypt:
+  encryptor:
+    password: ${ENCRYPT_KEY}
+```
+
+긴 글 읽어주셔서 감사합니다.
