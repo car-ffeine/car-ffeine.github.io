@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkcar_ffeine=self.webpackChunkcar_ffeine||[]).push([[9008],{6061:e=>{e.exports=JSON.parse('{"label":"\uc6b0\uc544\ud55c\ud14c\ud06c\ucf54\uc2a4","permalink":"/tags/\uc6b0\uc544\ud55c\ud14c\ud06c\ucf54\uc2a4","allTagsPath":"/tags","count":1}')}}]);
