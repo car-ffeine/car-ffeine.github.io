@@ -7,7 +7,7 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 'CAR-FFEINE',
-  url: 'https://car-ffenien.github.io',
+  url: 'https://car-ffeine.github.io',
   baseUrl: '/',
   organizationName: 'car-ffeine',
   projectName: 'car-ffeine',
