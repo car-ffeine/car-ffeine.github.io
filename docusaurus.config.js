@@ -57,11 +57,6 @@ const config = {
           title: 'CAR-FFEINE',
           items: [
             {
-              to: '/archive',
-              label: '블로그',
-              position: 'left'
-            },
-            {
               href: 'https://github.com/woowacourse-teams/2023-car-ffeine',
               position: 'right',
               className: 'header-github-link',
