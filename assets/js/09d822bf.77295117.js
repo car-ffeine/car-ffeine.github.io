@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkcar_ffeine=self.webpackChunkcar_ffeine||[]).push([[7605],{9027:s=>{s.exports=JSON.parse('{"label":"css in js","permalink":"/tags/css-in-js","allTagsPath":"/tags","count":1}')}}]);
