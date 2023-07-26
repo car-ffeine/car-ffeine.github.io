@@ -10,30 +10,33 @@ tags: [styled-components, css, css in js]
 여러 `CSS-in-JS` 중 styled-components를 선택한 이유는 다음과 같다.
 
 1. 컴포넌트 안에 관련 CSS를 작성할 수 있어 컴포넌트별 디자인 코드 확인 및 수정이 용이하다.
+
 2. 혹자는 코드 가독성이 안 좋아진다고도 하지만, 개인적으로는 태그를 더 시맨틱 하게 작성할 수 있어서 좋다고 느꼈다.
+
 3. 팀원들 모두 styled-components가 익숙하다.
+
 4. 지금까지 사용하면서 불편한 점을 못 느꼈다.
 
-styled-components와 emotion은 기능도, 작성법도 상당히 유사하다.
-그래서 이번에는 styled-components 대신 emotion을 써볼까도 생각했었다.
-하지만 emotion에서만 사용 가능하던 *CSS Props라는 편리한 기능을 styled-components(v5.2.0 이상)에서 쓸 수 있게 되기도 했고,
-'새로운 기술 공부를 해보면 좋을 것 같다'는 이유를 제외하고는
+styled-components와 emotion은 기능도, 작성법도 상당히 유사하다.<br>
+그래서 이번에는 styled-components 대신 emotion을 써볼까도 생각했었다.<br>
+하지만 emotion에서만 사용 가능하던 \*CSS Props라는 편리한 기능을 styled-components(v5.2.0 이상)에서 쓸 수 있게 되기도 했고,<br>
+'새로운 기술 공부를 해보면 좋을 것 같다'는 이유를 제외하고는<br>
 딱히 emotion을 사용할 필요성을 못 느껴 styled-components를 채택했다.
 
 ```typescript
 // *CSS Props 예시
 
 const buttonStyle = css`
-    font-size: 18px;
-    color: white;
-    background: black;
+  font-size: 18px;
+  color: white;
+  background: black;
 `;
 
 const ClickButton = styled.button<{ css: CSSProp }>`
-    width: 100px;
+  width: 100px;
 
-    ${({ css }) => css}
+  ${({ css }) => css}
 `;
 
-<ClickButton css={buttonStyle}>Click me!</ClickButton>
+<ClickButton css={buttonStyle}>Click me!</ClickButton>;
 ```
