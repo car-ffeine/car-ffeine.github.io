@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkcar_ffeine=self.webpackChunkcar_ffeine||[]).push([[6432],{4219:a=>{a.exports=JSON.parse('{"label":"tanstack query","permalink":"/tags/tanstack-query","allTagsPath":"/tags","count":1}')}}]);
