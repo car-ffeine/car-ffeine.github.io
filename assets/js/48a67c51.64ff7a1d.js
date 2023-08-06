@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkcar_ffeine=self.webpackChunkcar_ffeine||[]).push([[5478],{51835:e=>{e.exports=JSON.parse('{"label":"vpc","permalink":"/tags/vpc","allTagsPath":"/tags","count":1}')}}]);

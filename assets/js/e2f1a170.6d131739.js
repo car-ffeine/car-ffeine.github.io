@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkcar_ffeine=self.webpackChunkcar_ffeine||[]).push([[9107],{6277:e=>{e.exports=JSON.parse('{"permalink":"/tags/jpa","page":1,"postsPerPage":1,"totalPages":2,"totalCount":2,"nextPage":"/tags/jpa/page/2","blogDescription":"Blog","blogTitle":"Blog"}')}}]);

@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkcar_ffeine=self.webpackChunkcar_ffeine||[]).push([[9727],{1187:a=>{a.exports=JSON.parse('{"label":"slack","permalink":"/tags/slack","allTagsPath":"/tags","count":1}')}}]);

@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkcar_ffeine=self.webpackChunkcar_ffeine||[]).push([[3667],{53500:e=>{e.exports=JSON.parse('{"label":"react state management","permalink":"/tags/react-state-management","allTagsPath":"/tags","count":1}')}}]);
