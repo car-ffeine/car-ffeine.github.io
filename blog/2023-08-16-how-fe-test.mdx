@@ -1,0 +1,177 @@
+---
+slug: 26
+title: 카페인 팀 클라이언트의 테스트 자동화
+authors: [gabriel]
+tags: [테스트, test]
+---
+
+안녕하세요, 카페인 팀에서는 테스트를 어떻게 하고 있을까요?
+
+일반적으로 소프트웨어 테스트란 백엔드에서 그 중요성이 강조되곤 하지만, 프론트엔드에서도 그에 못지 않게 중요한 부분을 차지하고 있습니다.
+
+수많은 툴 중에서 어떤 테스트 라이브러리를 사용하는지 소개하겠습니다.
+
+카페인 팀에서는 다음과 같은 프론트엔드 테스트 라이브러리를 사용하고 있을 수 있습니다.
+
+### Jest
+Jest는 JavaScript의 테스트를 위한 대표적인 라이브러리입니다.
+기본 설정이 간편하고, 빠르게 테스트를 실행할 때 굉장히 유용합니다.
+함수를 mocking하여 의존성이 강한 함수를 제거하여 원하는 테스트를 쉽게 구성할 수 있다는 특징이 있습니다.
+
+
+### React Testing Library
+React Testing Library는 리액트 애플리케이션의 UI를 테스트하기 위한 라이브러리입니다.
+React 컴포넌트를 호출하여, 사용자의 의도대로 조작할 수 있는 행위를 정의할 수 있습니다.
+사용자 입장에서 상호작용 할 수 있는 부분을 스크립트로 작성하여 컴포넌트가 어떻게 변화하는지를 테스트 할 수 있게 됩니다.
+가령, 어떤 사용자가 어떤 폼에 어떤 값을 입력했을 때의 예상되는 결과를 작성해두면 이후에 코드 작업 중 버그가 발생한다면 해당 위치에서 테스트가 실패할 것입니다.
+
+### Storybook
+Storybook은 UI를 컴포넌트 단위로 개발하고 그 즉시 시각화 할 수 있도록 돕는 테스팅 라이브러리입니다.
+컴포넌트를 눈 앞에 바로 보여주고 실제 리액트에서 동작하는 것 처럼 컴포넌트 단위로 개발을 할 수 있습니다. CDD를 지향한다면 굉장히 유용한 기능이며, 개발자가 아닌 협업자에게도 원활한 커뮤니케이션을 도와줍니다.
+컴포넌트 단위로 개발하기 때문에 개별 컴포넌트가 어떻게 동작하는지 확인할 수 있다는 것 자체가 굉장한 이점으로 작용합니다.
+예를 들어 어떤 컴포넌트가 특정 메뉴 안에 존재해야 한다면, 이것을 확인하기 위해 해당 메뉴까지 접근해야 할 것입니다.
+하지만 Storybook을 이용하면 특정 컴포넌트를 Storybook 위에 올려놓고 테스트를 할 수 있어 빠르게 작업이 가능합니다.
+인터렉션이나 웹접근성을 확인해주는 플러그인도 존재하여 프론트엔드 개발에서 굉장히 중요한 역할로 부상했습니다.
+
+
+저희 팀은 이외에 Cypress를 사용하는 것도 고려하였으나, 지도와 결합된 애플리케이션을 테스트하기에 다소 어려움이 있어 위 라이브러리들을 개발에 활용했습니다.
+
+
+저희는 위 테스팅 라이브러리들을 원활히 활용하기 위해 테스트 자동화를 구축했습니다.
+
+## Jest와 React Testing Library 테스트 자동화
+
+```yaml
+name: frontend-test
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - frontend/**
+      - .github/**
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test-when-pull-request
+    runs-on: ubuntu-latest
+    environment: test
+    defaults:
+      run:
+        working-directory: ./frontend
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v2
+      - name: Install dependencies
+        run: npm install
+      - name: Test
+        run: npm run test
+```
+
+
+#### 이벤트 트리거 설정
+pull_request 이벤트가 발생하였을 때, 해당 이벤트가 main 브랜치와 develop 브랜치에서만 동작합니다.
+
+#### 변경 사항 경로 제한
+테스트를 실행할 때는 frontend 디렉토리와 .github 디렉토리 내의 파일들을 고려하도록 했습니다. 백엔드와의 환경 분리를 위해 이러한 접근 제한을 했습니다.
+
+#### 권한 설정
+permissions은 읽기 권한만 설정되어 있어 코드나 파일을 변경을 방지합니다.
+
+#### 작업(Job) 설정
+test라는 이름의 작업을 정의하였고, 이 작업에서는 Ubuntu 환경에서 테스트를 실행합니다. test라는 이름의 환경 변수를 사용합니다. 테스트는 (카페인 팀 레포지토리의) frontend 디렉토리에서 작업하도록 하였습니다.
+
+#### 스텝(Step) 설정
+코드를 체크아웃하고, 의존성을 설치하며, 테스트를 실행하는 세 가지 단계로 구성되어 있습니다.
+
+
+
+이러한 설정을 통해 PR에 코드가 올라올 때 자동으로 프론트엔드 테스트가 실행됩니다.
+
+이러한 테스트 자동화 전략은 프론트엔드 애플리케이션을 안정적이게 개발하고 유지할 수 있도록 도와줍니다.
+
+## Storybook의 빌드 자동화
+
+```yaml
+name: storybook-deploy
+
+on:
+  pull_request:
+    branches:
+      - develop
+    paths:
+      - frontend/**
+      - .github/**
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        working-directory: ./frontend
+    steps:
+      - name: Setup Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.16.0
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Cache node_modules
+        id: cache
+        uses: actions/cache@v3
+        with:
+          path: '**/node_modules'
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: storybook build
+        run: npm run build-storybook
+
+      - name: Upload storybook build files to temp artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: Storybook
+          path: frontend/storybook-static
+  deploy:
+    needs: build
+    runs-on: self-hosted
+    steps:
+      - name: Remove previous version app
+        working-directory: .
+        run: rm -rf dist
+
+      - name: Download the built file to AWS
+        uses: actions/download-artifact@v3
+        with:
+          name: Storybook
+          path: frontend/dev/dist
+
+      - name: Move folder
+        working-directory: frontend/dev/
+        run: |
+          rm -rf /home/ubuntu/dist/*
+          cp -r ./dist /home/ubuntu
+
+      - name: comment PR
+        uses: thollander/actions-comment-pull-request@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          message: '🚀storybook: https://storybook.carffe.in/'
+```
+
+비슷한 코드이지만, 매번 PR이 열릴 때 마다 스토리북이 자동으로 빌드 및 배포됩니다.
+배포가 완료되면 배포된 URL을 알려 코드 리뷰할 때 참고할 수 있도록 돕습니다.
+
+이상 카페인 팀에서 사용하고 있는 테스팅 라이브러리와 테스트 자동화 방법을 알아봤습니다.
