@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkcar_ffeine=self.webpackChunkcar_ffeine||[]).push([[682],{28616:e=>{e.exports=JSON.parse('{"label":"dev","permalink":"/tags/dev","allTagsPath":"/tags","count":1}')}}]);
