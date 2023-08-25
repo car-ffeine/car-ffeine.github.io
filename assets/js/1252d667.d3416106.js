@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkcar_ffeine=self.webpackChunkcar_ffeine||[]).push([[1566],{62229:e=>{e.exports=JSON.parse('{"permalink":"/tags/use-sync-external-store/page/2","page":2,"postsPerPage":1,"totalPages":2,"totalCount":2,"previousPage":"/tags/use-sync-external-store","blogDescription":"Blog","blogTitle":"Blog"}')}}]);
