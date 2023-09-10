@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkcar_ffeine=self.webpackChunkcar_ffeine||[]).push([[6524],{79118:e=>{e.exports=JSON.parse('{"permalink":"/tags/mysql/page/2","page":2,"postsPerPage":1,"totalPages":2,"totalCount":2,"previousPage":"/tags/mysql","blogDescription":"Blog","blogTitle":"Blog"}')}}]);
