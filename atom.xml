@@ -7,6 +7,38 @@
     <link rel="alternate" href="https://car-ffeine.github.io/"/>
     <subtitle>CAR-FFEINE Blog</subtitle>
     <entry>
+        <title type="html"><![CDATA[혼잡도 조회 속도를 파티셔닝과 인덱스로 개선해보기]]></title>
+        <id>https://car-ffeine.github.io/33</id>
+        <link href="https://car-ffeine.github.io/33"/>
+        <updated>2023-09-11T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[안녕하세요.]]></summary>
+        <content type="html"><![CDATA[<p>안녕하세요.
+카페인 팀의 제이입니다.</p><p>저희 서비스에서는 충전소의 요일과 시간대 별로 충전소 혼잡도 정보를 제공을 차별적인 기능으로 제공하고 있습니다.</p><p>이를 구현하기 위해서 공공 데이터에서 정보를 수집하고있습니다.
+혼잡도를 조회하기 위해서는 약 23만 건의 충전소 <em> 7일 </em> 24시간 = 약 4000만 건의 데이터 중에서 조회를 하는 형식으로 되어있습니다.</p><p>너무 많은 데이터가 있다보니 조회 속도가 많이 느린데요.
+오늘은 이를 어떻게 개선했는지 작성해보도록 하겠습니다.</p><hr><h2 class="anchor anchorWithStickyNavbar_LWe7" id="문제-확인">문제 확인<a href="#문제-확인" class="hash-link" aria-label="문제 확인에 대한 직접 링크" title="문제 확인에 대한 직접 링크">​</a></h2><p>기존의 저희는 많은 양의 데이터를 감당하기 힘들어서 <!-- -->[오전, 오후]<!-- --> 이렇게 두 부분으로 나눠서 혼잡도를 조회했습니다.</p><p>하지만 실제 배포를 하기 위해서 더이상은 오전 오후로 나눌 수가 없었는데요.</p><p>정상적인 데이터를 제공하기 위해서 먼저 24시간 기준으로 혼잡도를 갱신하도록 로직부터 바꾸었습니다.</p><p>위와 같이 코드를 바꾸니 바로 성능에 문제가 생겼습니다.
+<img loading="lazy" src="https://postfiles.pstatic.net/MjAyMzA5MTFfMTA4/MDAxNjk0NDIwNjEzOTU3.Q1_sK5nRvBVbJ9w4bdYkofc0zX00TQmJUQPIqRQiofwg.FRujZOroDjWC4znh0pueWi84EAh9-LVKk17z2ojLi1Ig.PNG.sosow0212/image.png?type=w773" alt="img" class="img_ev3q"></p><p>위의 사진과 같이 slow-query를 분석해보았습니다.
+혼잡도 업데이트에도 시간이 걸리는 것을 확인할 수 있지만, 조회 시간은 최악의 경우 약 12분 정도로 사용자들이 볼 수도 없었습니다.</p><p>이런 문제가 발생한 이유는 다음과 같습니다.
+먼저 가장 큰 문제는 데이터가 많기 때문이고, 두 번째로는 비효율적인 API로 인한 문제입니다.</p><p>현재 혼잡도 조회시 0~23시까지 모든 요일의 급속과 완속 충전기에 대한 혼잡도를 가져옵니다.
+굳이 이럴 필요 없이 선택한 요일에만 혼잡도를 가져온다면 불필요한 조회는 없을 거라고 생각해서 일부분 리팩토링을 하기로 했습니다.</p><p>추가적으로 박스터가 DB Replication을 적용해서, Update로 인한 속도 저하 현상도 많이 줄어들 것을 기대할 수 있었습니다.</p><hr><h2 class="anchor anchorWithStickyNavbar_LWe7" id="문제-해결-과정">문제 해결 과정<a href="#문제-해결-과정" class="hash-link" aria-label="문제 해결 과정에 대한 직접 링크" title="문제 해결 과정에 대한 직접 링크">​</a></h2><ul><li>먼저 기존 코드로 조회시에 속도가 얼마나 나오는지 확인을 해보겠습니다.
+<img loading="lazy" src="https://blogfiles.pstatic.net/MjAyMzA5MTFfMTgz/MDAxNjk0NDIwODU1MDg0.d2ig3CCgdHDwkz_7d4qyhVKM0PQ4MV8BcUwm9LjqAcAg.LdVGDSqRuArzM32ZD1tHbxsD2xG5pt8xrOrDwhR25wcg.PNG.sosow0212/image.png" alt="img" class="img_ev3q">
+기존의 모든 혼잡도를 들고오는 경우 위와 같이 536ms의 시간이 소모되는 것을 확인할 수 있습니다.</li></ul><p><img loading="lazy" src="https://blogfiles.pstatic.net/MjAyMzA5MTFfMjA5/MDAxNjk0NDIwODk3NDE4.N3tGXL52LYr5Koc1Lwk0Tfhe3Apkao9BEI8waHIkwNgg.AUEcIoBUg8AtXMiZCc2P13Vb_DCeWnsoXH2-6acaClIg.PNG.sosow0212/image.png" alt="img" class="img_ev3q">
+위에 사진과 같이 <code>day_of_week</code> 즉 혼잡도를 확인하고 싶은 요일을 추가적으로 조건에 명시해주니
+148ms로 줄은 것을 확인할 수 있습니다.</p><p>148ms는 아직 한참 느립니다.</p><p>먼저 문제를 해결하기 위해서 <code>DB Partitioning</code>을 적용했습니다.</p><p>DB Partitioning에 대해 간단하게 설명하자면 큰 테이블을 작은 단위로 관리하는 기법입니다.
+하나의 테이블로 보이지만 이를 적용하면 실제로 여러 개의 테이블로 분리해서 관리하는 기법이고, 이를 통해서 조회 및 업데이트 쿼리 성능이 개선될 수 있습니다.</p><p>저희 팀은 List partitioning을 적용해서 <code>day_of_week(요일)</code>을 기준으로 파티셔닝을 했습니다.
+<img loading="lazy" src="https://blogfiles.pstatic.net/MjAyMzA5MTFfMTE0/MDAxNjk0NDIxMzg1NTMx.Q4VBItbFdityCKdRFYqpC1qVtoi81RRqcmysYMh-9xog.d8MIYW-tatGXoaxCJ-o6vS5wydEk1yQVQTtmmZvooFIg.PNG.sosow0212/image.png" alt="img" class="img_ev3q">
+위에 사진과 같이 day_of_week를 기준으로 파티셔닝을 했습니다.</p><p><img loading="lazy" src="https://blogfiles.pstatic.net/MjAyMzA5MTFfMjA5/MDAxNjk0NDIxNDM3MTI2.QXclZKmnwVTcYrkR95yPJV3vxCCzcaisaWj29WGxFucg.CO0SafuQLRmWPzAs9-9ForUnT1fjcqxXBRmX1UmB-b8g.PNG.sosow0212/image.png" alt="img" class="img_ev3q">
+List Partitioning을 적용하고 위에 사진과 같이 조회 쿼리를 다시 날려보면, <code>partitions = p_friday</code> 로 잘 나뉘어진 것을 확인할 수 있습니다.</p><p>파티셔닝 작업이 잘 되었으니 이제 API에서 요일 별 혼잡도 조회로 바꿔보겠습니다.
+먼저 쿼리를 변경하고 쿼리를 확인해보니 다음과 같이 나왔습니다.</p><p><img loading="lazy" src="https://postfiles.pstatic.net/MjAyMzA5MTFfMjQ5/MDAxNjk0NDIxNTcwOTg3.mgx-mdBa6J6k8erhiksOOkzrMzOMmCLX7iuRPZf7RNEg.ALwxez4qUVHB1wlIr9zsZovCBlxoIsmgCa4wNv-7t_4g.PNG.sosow0212/image.png?type=w773" alt="img" class="img_ev3q">
+위와 같은 조회 쿼리가 나왔으므로 인덱스를 아래와 같이 <code>station_id, day_of_week</code>에 걸어주었습니다.</p><p><img loading="lazy" src="https://postfiles.pstatic.net/MjAyMzA5MTFfMjgy/MDAxNjk0NDIxNjI2NDAz.XqGsab-JR_fQaIZhCYMiKy5r3cn85wFLwUNlmCo1Gqwg.a26_N5lnwzXX6z0JRqn35u8pGcj1TAa2nDamgRyOYjUg.PNG.sosow0212/image.png?type=w773" alt="img" class="img_ev3q">
+위 실행 속도에서 execution time을 확인해보면 인덱스를 걸고 <code>134ms -&gt; 5ms</code>로 성능이 많이 개선 되었음을 확인할 수 있습니다.</p><p><img loading="lazy" src="https://postfiles.pstatic.net/MjAyMzA5MTFfMjI3/MDAxNjk0NDIxNjc5NDIw.kbfBLWKeY70QFeByKN5xVX1WhFSpFZbJnFkx9l0zyrQg.Wv0QU9W6Fqjfr8eyyLT2MyttjDKzN2cdrItGH7CDLPYg.PNG.sosow0212/image.png?type=w773" alt="img" class="img_ev3q">
+실행 계획도 의도한대로 잘 나오는 것을 보실 수 있습니다.</p><hr><h2 class="anchor anchorWithStickyNavbar_LWe7" id="정리">정리<a href="#정리" class="hash-link" aria-label="정리에 대한 직접 링크" title="정리에 대한 직접 링크">​</a></h2><ol><li>DB Partitioning - (day_of_week : 요일)을 기준으로 파티셔닝</li><li>조회 쿼리에 맞게 인덱스 설정</li><li>API 수정 (모든 요일의 혼잡도 조회 -&gt; 해당 요일의 혼잡도 조회)</li></ol><p>결과적으로 기존 혼잡도 조회시 511ms가 나왔으나, 요일 별 조회 및 파티셔닝 &amp; 인덱스를 적용하고 execution time = 5ms로 개선</p>]]></content>
+        <author>
+            <name>제이</name>
+            <uri>https://github.com/sosow0212</uri>
+        </author>
+        <category label="mysql" term="mysql"/>
+    </entry>
+    <entry>
         <title type="html"><![CDATA[데이터베이스 레플리케이션으로 조회 성능 개선하기]]></title>
         <id>https://car-ffeine.github.io/32</id>
         <link href="https://car-ffeine.github.io/32"/>
