@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkcar_ffeine=self.webpackChunkcar_ffeine||[]).push([[6984],{90058:a=>{a.exports=JSON.parse('{"label":"java","permalink":"/tags/java","allTagsPath":"/tags","count":2}')}}]);
