@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkcar_ffeine=self.webpackChunkcar_ffeine||[]).push([[2752],{65386:e=>{e.exports=JSON.parse('{"label":"useSyncExternalState","permalink":"/tags/use-sync-external-state","allTagsPath":"/tags","count":1}')}}]);
