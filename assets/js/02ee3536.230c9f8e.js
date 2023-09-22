@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkcar_ffeine=self.webpackChunkcar_ffeine||[]).push([[8684],{30639:a=>{a.exports=JSON.parse('{"label":"ga4","permalink":"/tags/ga-4","allTagsPath":"/tags","count":1}')}}]);
