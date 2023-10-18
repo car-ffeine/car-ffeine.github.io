@@ -1,0 +1,258 @@
+---
+slug: 41
+title: 카페인 팀의 무중단 배포
+authors: [jay]
+tags: [infra, ec2, cd, aws, zero-time, blue-green]
+---
+
+안녕하세요! 카페인팀의 제이입니다.
+
+
+저희 카페인 팀에서 무중단 배포를 진행했습니다.
+어떤 과정으로 진행을 했는지 작성해보도록 하겠습니다!
+
+---
+
+## 기존 배포 방식과 문제점
+
+<b>먼저 카페인 팀의 기존 배포 방식은 다음과 같습니다.</b>
+<br/><br/>
+
+
+1. <b>Target branch에 push</b>가 되면 <b>Github Actions</b>가 작동합니다.
+2. Target branch의 <b>소스 코드가 빌드되어서 Docker Hub</b>에 올라가게 됩니다.
+3. <b>Github Actions의 self-hosted runner</b>를 통해 <b>infra 서버에서 prod 서버로 접근</b>하여서 <b>기존에 띄워진 서버를 다운</b> 시킵니다.
+4. Docker Hub에 업로드한 <b>Docker image를 pull해서 서버를 가동</b>시킵니다.
+
+
+<br/>
+이런 과정으로 배포 스크립트가 작성되어 있습니다.
+하지만 이 방법은 <b>기존 서버를 다운 시키고 새로운 서버를 띄울 때 다운 타임이 존재한다는 문제점</b>이 있습니다.
+<br/>
+
+<br/>
+사용자 입장에서는 잘 사용하고 있는데 갑자기 서비스가 작동되지 않는다면 서비스에 대한 신뢰성이 낮아질 수도 있고 이런 이유로 이탈할 수도 있습니다.
+
+---
+
+## 기존 문제를 해결하기
+
+저희는 먼저 제한된 EC2 인스턴스로 인해 롤링 배포의 장점을 가져갈 수 없었고, 카나리 방식 또한 저희 서비스에서 필요로한 전략이 아니기 때문에 비교적 롤백도 빠른 <b>Blue/Green</b> 전략을 선택하였습니다.
+
+
+저희의 Blue/Green 무중단 배포 시나리오는 다음과 같습니다.
+편의를 위해서 <b>[기존 서버(기존 포트) / 새로운 서버(새로운 포트)]</b> 라는 명칭을 사용하겠습니다.
+
+<br/>
+
+1. <b>Target branch에 push</b>가 되면 <b>Github Actions가 작동</b>합니다.
+2. Target branch의 <b>소스 코드가 빌드되어서 Docker Hub</b> 에 올라가게 됩니다.
+3. <b>Github Actions의 self-hosted runner</b>를 통해 <b>infra 서버에서 prod 서버로 접근</b>해서 Docker Hub에 업로드한 <b>새로운 버전의 Image를
+    pull</b> 해옵니다.
+4. 만약 <b>8080 포트에 기존 서버가 띄워져 있으면 8081 포트를 새로운 서버가 띄워질 포트로 지정</b>해주고, 반대로 <b>8081 포트에 기존 서버가 띄워져 있으면 8080 포트에 새로운 서버가 띄워질 포트로 지정</b>해줍니다.
+5. 미리 Docker Hub에 업로드한 <b>Docker image를 [image+port]라는 네이밍으로 pull을 한 후 새로운 포트로 서버를 가동</b>시킵니다.
+6. 새로운 서버가 제대로 가동 됐는지 확인하기 위해서 <b>헬스 체크</b>를 진행합니다. 20번 동안 서버가 정상 동작하는지 Spring Actuactor를 통해서 확인을 합니다.
+7. <b>정상 작동이 됐음을 확인하면 현재 인스턴스에는 2대의 서버</b>가 띄워져있고 <b>요청은 여전히 기존 서버</b>로 들어가게 됩니다. 따라서 <b>Nginx를 통해 포트포워딩을 새로운 서버의 포트로
+    지정</b>해주고 <b>기존 서버는 내려</b>줍니다.
+
+<br/>
+여기까지가 카페인 팀의 시나리오입니다.
+그렇다면 하나씩 스크립트를 확인해보겠습니다. 설명은 주석으로 달아두겠습니다 :)
+
+<br/>
+<br/>
+
+### backend-deploy.yml
+(Github Actions에서 사용)
+
+```yml
+name: deploy
+
+# 1. prod/backend branch에 push 작업이 일어나면 해당 작업을 수행한다
+on:
+  push:
+    branches:
+      - prod/backend
+
+jobs:
+  docker-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+
+    steps:
+      # 2. 도커 허브에 로그인
+      - name: Log in to Docker Hub
+        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+      - uses: actions/checkout@v3
+
+      # 3. JDK 17 설치 및 빌드 (프로젝트 Java version)
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'adopt'
+
+      - name: Gradle Caching
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+          - name: Build for asciiDoc
+              run: ./gradlew bootjar
+
+      - name: Build with Gradle
+        run: ./gradlew bootjar
+
+      # 4. 산출물을 Image로 빌드 후 Docker Hub에 Image Push하기
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        with:
+          images: woowacarffeine/backend
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
+        with:
+          context: .
+          file: ./backend/Dockerfile
+          push: true
+          platforms: linux/arm64
+          tags: woowacarffeine/backend:latest
+          labels: ${{ steps.meta.outputs.labels }}
+
+
+  deploy:
+    # 5. Self-hosted 작동 -> infra 인스턴스에서 작동됨
+    runs-on: self-hosted
+    if: ${{ needs.docker-build.result == 'success' }}
+    needs: [ docker-build ]
+    steps:
+
+      # 6. infra 인스턴스에서 prod 인스턴스로 접근 (아래부터는 prod 서버 내에서 작업)
+      - name: Join EC2 prod server
+        uses: appleboy/ssh-action@master
+        env:
+          JASYPT_KEY: ${{ secrets.JASYPT_KEY }}
+          DATABASE_USERNAME: ${{ secrets.DATABASE_USERNAME }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_KEY }}
+          port: ${{ secrets.SERVER_PORT }}
+          envs: JASYPT_KEY, DATABASE_USERNAME, DATABASE_PASSWORD
+
+          script: |
+
+            # 7. Docker Hub에서 Image를 pull해온다
+            sudo docker pull woowacarffeine/backend:latest
+
+            # 8. 만약 8080 포트가 켜져 있으면 새로운 서버의 포트는 8081로 설정
+            if sudo docker ps | grep ":8080"; then
+              export BEFORE_PORT=8080
+              export NEW_PORT=8081
+              export NEW_ACTUATOR_PORT=8089
+
+            # 9. 만약 8081 포트가 켜져 있으면 새로운 서버의 포트는 8080로 설정
+            else
+              export BEFORE_PORT=8081
+              export NEW_PORT=8080
+              export NEW_ACTUATOR_PORT=8088
+            fi
+
+            # 10. Docker로 새로운 서버를 띄운다.
+            sudo docker run -d -p $NEW_PORT:8080 -p $NEW_ACTUATOR_PORT:8088 \
+            -e "SPRING_PROFILE=prod" \
+            -e "ENCRYPT_KEY=${{secrets.JASYPT_KEY}}" \
+            -e "DATABASE_USERNAME=${{secrets.DATABASE_USERNAME}}" \
+            -e "DATABASE_PASSWORD=${{secrets.DATABASE_PASSWORD}}" \
+            -e "REPLICA_DATABASE_USERNAME=${{secrets.REPLICA_DB_USER_NAME}}" \
+            -e "REPLICA_DATABASE_PASSWORD=${{secrets.REPLICA_DB_USER_PASSWORD}}" \
+            -e "SLACK_WEBHOOK_URL=${{secrets.SLACK_WEBHOOK_URL}}" \
+            --name backend$NEW_PORT \
+            woowacarffeine/backend:latest
+
+            # 11. prod 인스턴스에 있는 bluegreen.sh 를 작동한다. (이 때 port 값을 같이 넣어준다.)
+            sudo sh /home/ubuntu/bluegreen.sh $BEFORE_PORT $NEW_PORT $NEW_ACTUATOR_PORT
+
+```
+
+<br/>
+<br/>
+
+### bluegreen.sh
+(prod 인스턴스 내부에 존재)
+
+```shell
+#!/bin/bash
+
+# 1. Github Actions를 통해 넘겨 받은 환경변수 값
+BEFORE_PORT=$1
+NEW_PORT=$2
+NEW_ACTUATOR_PORT=$3
+
+echo "기존 포트 : $BEFORE_PORT"
+echo "새로운 포트: $NEW_PORT"
+echo "새로운 ACTUATOR_PORT: $NEW_ACTUATOR_PORT"
+
+
+# 2. 20번 동안 헬스 체크를 진행
+count=0
+for count in {0..20}
+do
+  echo "서버 상태 확인(${count}/20)";
+
+  # 3. 새로운 서버가 작동되는지 Actuator를 통해 값을 받아옴
+  STATUS=$(curl -s http://127.0.0.1:${NEW_ACTUATOR_PORT}/actuator/health-check)
+
+  # 4. Actuator를 통해 성공적으로 서버가 띄워지지 않은 경우
+  if [ "${STATUS}" != '{"status":"up"}' ]
+  	then
+        # 5. 10초를 기다린 후 다시 헬스 체크를 진행한다.
+  		sleep 10
+  		continue
+  	else
+        # 6. 헬스 체크를 통해 새로운 서버가 성공적으로 작동된다면 멈춘다.
+  		break
+  fi
+done
+
+
+# 7. 20번의 헬스 체크를 하는 동안 새로운 서버가 제대로 작동되지 않은 경우 종료
+if [ $count -eq 20 ]
+then
+	echo "새로운 서버 배포를 실패했습니다."
+	exit 1
+fi
+
+
+# 8. 새로운 서버가 성공적으로 작동한 경우
+# Nginx를 통해 포트포워딩을 기존 포트에서 새로운 포트로 변경해준다.
+# 이 부분은 .inc 파일을 통해 Nginx에서 주입 받아서 포트만 변경해도 됩니다!
+export BACKEND_PORT=$NEW_PORT
+envsubst '${BACKEND_PORT}' < backend.template > backend.conf
+sudo mv backend.conf /etc/nginx/conf.d/
+sudo nginx -s reload
+
+
+# 9. 기존 서버를 내려주고, 도커 리소스를 정리해준다
+docker stop backend$BEFORE_PORT
+sudo docker container prune -f
+```
+
+
+이렇게 카페인 팀에서는 무중단 배포를 도입할 수 있었습니다.
+
+긴 글 읽어주셔서 감사합니다 :)
