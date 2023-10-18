@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkcar_ffeine=self.webpackChunkcar_ffeine||[]).push([[8721],{17731:e=>{e.exports=JSON.parse('{"permalink":"/tags/aws/page/3","page":3,"postsPerPage":1,"totalPages":4,"totalCount":4,"previousPage":"/tags/aws/page/2","nextPage":"/tags/aws/page/4","blogDescription":"Blog","blogTitle":"Blog"}')}}]);
