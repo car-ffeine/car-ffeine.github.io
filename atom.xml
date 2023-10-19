@@ -18,6 +18,27 @@
         <category label="collaboration" term="collaboration"/>
     </entry>
     <entry>
+        <title type="html"><![CDATA[카페인 서비스 방문자 분석 - 2]]></title>
+        <id>https://car-ffeine.github.io/43</id>
+        <link href="https://car-ffeine.github.io/43"/>
+        <updated>2023-10-19T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[카페인 서비스의 방문자 통계를 공개합니다. 사진 - 우클릭 - 새 탭에서 보기를 누르면 좀 더 큰 화면에서 확인할 수 있습니다.]]></summary>
+        <content type="html"><![CDATA[<p>카페인 서비스의 방문자 통계를 공개합니다. 사진 - 우클릭 - 새 탭에서 보기를 누르면 좀 더 큰 화면에서 확인할 수 있습니다.</p><p><img loading="lazy" alt="no offset" src="/assets/images/report-1-24a19304076da351d45ffd4fad22dd3c.jpg" width="1444" height="1114" class="img_ev3q">
+<img loading="lazy" alt="no offset" src="/assets/images/report-2-0e4dcf52281a9327ab66d76e8889ee5a.jpg" width="1444" height="1114" class="img_ev3q">
+<img loading="lazy" alt="no offset" src="/assets/images/report-3-4d57784043b803d60241e3d4417c3582.jpg" width="1444" height="1114" class="img_ev3q">
+<img loading="lazy" alt="no offset" src="/assets/images/report-4-73cea9b32c1a5f8557a64a28c7867923.jpg" width="1444" height="1114" class="img_ev3q">
+<img loading="lazy" alt="no offset" src="/assets/images/report-5-914a0377b591f9d9dc58ea570c6fc8d1.jpg" width="1444" height="1114" class="img_ev3q"></p>]]></content>
+        <author>
+            <name>가브리엘</name>
+            <uri>https://github.com/gabrielyoon7</uri>
+        </author>
+        <category label="카페인" term="카페인"/>
+        <category label="서비스 경험" term="서비스 경험"/>
+        <category label="피드백" term="피드백"/>
+        <category label="전기차 사용기" term="전기차 사용기"/>
+        <category label="전기차 충전소 앱" term="전기차 충전소 앱"/>
+    </entry>
+    <entry>
         <title type="html"><![CDATA[카페인 팀의 무중단 배포]]></title>
         <id>https://car-ffeine.github.io/41</id>
         <link href="https://car-ffeine.github.io/41"/>
@@ -118,7 +139,7 @@
         <category label="서버 부하 줄이기" term="서버 부하 줄이기"/>
     </entry>
     <entry>
-        <title type="html"><![CDATA[카페인 서비스 방문자 분석]]></title>
+        <title type="html"><![CDATA[카페인 서비스 방문자 분석 - 1]]></title>
         <id>https://car-ffeine.github.io/38</id>
         <link href="https://car-ffeine.github.io/38"/>
         <updated>2023-09-22T00:00:00.000Z</updated>

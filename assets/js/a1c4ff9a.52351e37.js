@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunkcar_ffeine=self.webpackChunkcar_ffeine||[]).push([[4877],{88303:e=>{e.exports=JSON.parse('{"label":"\uc11c\ube44\uc2a4 \uacbd\ud5d8","permalink":"/tags/\uc11c\ube44\uc2a4-\uacbd\ud5d8","allTagsPath":"/tags","count":2}')}}]);
