@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkcar_ffeine=self.webpackChunkcar_ffeine||[]).push([[2997],{8141:a=>{a.exports=JSON.parse('{"label":"collaboration","permalink":"/tags/collaboration","allTagsPath":"/tags","count":1}')}}]);

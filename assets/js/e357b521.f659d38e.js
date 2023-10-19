@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkcar_ffeine=self.webpackChunkcar_ffeine||[]).push([[3467],{99355:e=>{e.exports=JSON.parse('{"label":"\uad6c\uae00 \uc9c0\ub3c4","permalink":"/tags/\uad6c\uae00-\uc9c0\ub3c4","allTagsPath":"/tags","count":1}')}}]);

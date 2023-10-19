@@ -4,10 +4,21 @@
         <title>CAR-FFEINE Blog</title>
         <link>https://car-ffeine.github.io/</link>
         <description>CAR-FFEINE Blog</description>
-        <lastBuildDate>Wed, 18 Oct 2023 00:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Thu, 19 Oct 2023 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <language>ko</language>
+        <item>
+            <title><![CDATA[카페인 팀의 사용자 편의를 위한 협업]]></title>
+            <link>https://car-ffeine.github.io/42</link>
+            <guid>https://car-ffeine.github.io/42</guid>
+            <pubDate>Thu, 19 Oct 2023 00:00:00 GMT</pubDate>
+            <description><![CDATA[사용자 피드백]]></description>
+            <content:encoded><![CDATA[<h2 class="anchor anchorWithStickyNavbar_LWe7" id="사용자-피드백">사용자 피드백<a href="#사용자-피드백" class="hash-link" aria-label="사용자 피드백에 대한 직접 링크" title="사용자 피드백에 대한 직접 링크">​</a></h2><p><img loading="lazy" src="https://github.com/woowacourse/service-apply/assets/106640954/e38ba7d6-7a56-43e3-926d-fdd5e1a8f80f" alt="image" class="img_ev3q"></p><p>저희 서비스를 배포하고 사용자에게 피드백을 받았는데, 축소했을 때가 많이 불편하다는 피드백이 대부분이였습니다.</p><p>이유는 아래 화면과 같습니다</p><p><img loading="lazy" src="https://github.com/woowacourse-teams/2023-car-ffeine/assets/106640954/8792447a-5e3b-4afe-b556-2ef20e1c9cfd" alt="asis" class="img_ev3q"></p><p>이런 서비스를 본 적도 없고, 이런 서비스를 사용하고 싶지도 않을 것 입니다. 해당 부분의 문제를 알고 있었지만 어떻게 표현해주는 것이 좋고, 구현할 수 있는 방법이 떠오르지 않아 6차 데모데이까지 미루게 되었습니다.</p><p>열심히 팀 회의를 한 결과 화면에 보이는 사이즈만큼 일정 범위로 나눠 충전소 개수를 보여주는 클러스터링 기능을 추가하기로 정했습니다.</p><h2 class="anchor anchorWithStickyNavbar_LWe7" id="클러스터-기능-추가">클러스터 기능 추가<a href="#클러스터-기능-추가" class="hash-link" aria-label="클러스터 기능 추가에 대한 직접 링크" title="클러스터 기능 추가에 대한 직접 링크">​</a></h2><p>해당 기능을 간단하게 설명드리면 화면의 일정 범위로 나눠 충전소의 개수를 보여주도록 서버에서 계산하여 클라이언트로 전달하도록 했습니다.
+하지만 전달한 클러스터링 마커들의 위치가 아래와 같이 예쁘게 보이지 않았습니다.</p><p><img loading="lazy" src="https://github.com/woowacourse-teams/2023-car-ffeine/assets/106640954/133cb411-68bb-48f7-85a3-eca8a91d23bf" alt="image (5)" class="img_ev3q"></p><p>화면의 크기에 비해 마커가 몇개 없는 것을 볼 수 있습니다. 이렇게 된다면 사용자는
+그렇기에 클라이언트에 해당 기능을 담당한 가브리엘, 센트가 좀 더 유연하게 마커를 보여주는 것이 UX 관점에서 좋다고 얘기하여</p><p>서버 API와 로직을 변경하여 동적으로 화면의 충전소를 클러스터하도록 변경하였습니다. 그렇게 하여 아래와 같은 화면을 제공하도록 하였습니다.</p><p><img loading="lazy" src="https://github.com/woowacourse-teams/2023-car-ffeine/assets/106640954/c65d9a51-5d3d-407b-9d72-13f06580a502" alt="final" class="img_ev3q"></p><p>이상 협업 일화 였습니다.</p>]]></content:encoded>
+            <category>collaboration</category>
+        </item>
         <item>
             <title><![CDATA[카페인 팀의 무중단 배포]]></title>
             <link>https://car-ffeine.github.io/41</link>
